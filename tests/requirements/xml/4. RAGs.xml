@@ -1,0 +1,14 @@
+<atomic_structure>
+  <topic id="rag_production_approach">
+    <constraint id="document_quality">Document quality, retrieval performance, and knowledge base management are critical factors that require systematic attention and optimization.</constraint>
+    <pattern id="improve_document_quality">Use clear headings and consistent terminology. Define Key Terms: Clearly define important terms. Balance Conciseness and Context: Ensure content is concise yet provides necessary context. Include Metadata: Add metadata to enhance retrieval capabilities and improve document categorization.</pattern>
+    <constraint id="optimize_chunking_strategies">Create Semantically Meaningful Chunks: Break down content into meaningful segments. Strategic Overlap: Maintain context between segments through strategic overlap. Adapt Chunk Size: Adjust chunk size based on content type and density. Preserve Hierarchical Relationships: Ensure document structure and meaning are maintained.</constraint>
+    <pattern id="enhance_retrieval_mechanisms">Hybrid Retrieval: Combine keyword and semantic search methods. Re-ranking: Improve relevance through re-ranking techniques. Multi-stage Pipelines: Use multi-stage pipelines for refined results. User Feedback Loops: Incorporate user feedback to continuously improve retrieval quality.</pattern>
+    <constraint id="design_for_production_scale">Efficient Vector Storage and Indexing: Use efficient methods for large document collections. Caching: Implement caching for frequent queries. Horizontal Scaling: Design systems for horizontal scaling. Performance Metrics: Monitor performance metrics and automate optimization to maintain efficiency.</constraint>
+    <pattern id="implement_continuous_improvement">Feedback Mechanisms: Establish mechanisms to identify retrieval failures. Regular Updates: Update document processing pipelines with new best practices. Monitor Content Drift: Keep an eye on content drift and implement version control for knowledge bases.</pattern>
+  </topic>
+  <topic id="geographic_performance">
+    <constraint id="test_performance_from_different_aws_regions">Evaluate performance across various geographic locations.</constraint>
+    <pattern id="optimize_deployment_strategies">Adjust deployment strategies based on geographic latency impacts.</pattern>
+  </topic>
+</atomic_structure>

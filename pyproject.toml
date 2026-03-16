@@ -1,0 +1,73 @@
+[project]
+name = "docs-fixing-assistant"
+version = "0.1.0"
+description = "AI-powered assistant to fix documentation debt"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "orjson>=3.11.7",
+    "python-json-logger>=4.0.0",
+    "ty>=0.0.21",
+    "pydantic-settings>=2.13.1",
+    "ollama>=0.6.1",
+    "jinja2>=3.1.6",
+    "python-multipart>=0.0.22",
+    "defusedxml>=0.7.1",
+    "pytest>=9.0.2",
+    "bandit>=1.9.4",
+    "xmlschema>=4.3.1",
+    "requests>=2.32.5",
+    "pytest-asyncio>=1.3.0",
+]
+
+[tool.uv]
+package = true
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.package-dir]
+"" = "src"
+
+[project.scripts]
+start-app = "api.main:start"
+
+[tool.ruff]
+src = ["src"]
+exclude = ["*venv*", "build", "dist"]
+indent-width = 4
+line-length = 88
+
+[tool.ruff.lint]
+ignore = ["E501"]
+select = ["E", "F", "I", "UP"]
+
+[tool.ruff.format]
+indent-style = "space"
+line-ending = "auto"
+quote-style = "double"
+skip-magic-trailing-comma = false
+
+[tool.ruff.lint.isort]
+known-first-party = ["api", "domain", "infrastructure"]
+
+[tool.bandit]
+exclude_dirs = ["tests", "venv", ".venv"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101"]
+"**/test_*.py" = ["S101"]
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    "ignore:defusedxml.cElementTree is deprecated:DeprecationWarning",
+]
+markers = [
+    "integration: marks tests as integration tests (slow, requires Ollama)"
+]
+addopts = "-m 'not integration'"
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"

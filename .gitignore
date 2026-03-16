@@ -1,0 +1,5 @@
+.env
+venv/*
+.venv/*
+docs_fixing_assistant.egg-info
+__pycache__

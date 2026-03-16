@@ -1,0 +1,112 @@
+Here is the transformed XML structure based on the provided content:
+
+<atomic_structure>
+    <topic name="foundation_model_integration">
+        <pattern name="amazon_bedrock_integration">
+            <description>Managed Foundation Model Access - Consistent APIs Across Models</description>
+        </pattern>
+        <pattern name="amazon_sagemaker_jumpstart">
+            <description>Pre-trained Models - Quick Deployment Patterns</description>
+        </pattern>
+        <pattern name="api_gateways">
+            <description>Consistent Model Access Interfaces</description>
+        </pattern>
+        <pattern name="caching_strategies">
+            <description>Frequently Accessed Responses</description>
+        </pattern>
+    </topic>
+    <topic name="inference_optimization">
+        <pattern name="model_selection">
+            <description>Use Case Requirements - Performance and Cost Balance</description>
+        </pattern>
+        <pattern name="prompt_caching">
+            <description>Frequent Requests</description>
+        </pattern>
+        <pattern name="response_caching">
+            <description>Frequent Requests</description>
+        </pattern>
+        <pattern name="batch_processing_patterns">
+            <description>Throughput Optimization</description>
+        </pattern>
+        <pattern name="timeout_and_retry_mechanisms">
+            <description>Reliable Inference</description>
+        </pattern>
+    </topic>
+    <topic name="prompt_engineering">
+        <pattern name="reusable_prompt_templates">
+            <description>Common Use Cases</description>
+        </pattern>
+        <pattern name="version_control">
+            <description>Prompt Tracking</description>
+        </pattern>
+        <pattern name="testing_frameworks">
+            <description>Systematic Validation</description>
+        </pattern>
+        <pattern name="performance_metrics">
+            <description>Prompt Effectiveness</description>
+        </pattern>
+        <pattern name="security_guidelines">
+            <description>Safe Prompt Handling</description>
+        </pattern>
+    </topic>
+    <topic name="data_pipeline_components">
+        <pattern name="data_ingestion_processes">
+            <description>Consistent Collection</description>
+        </pattern>
+        <pattern name="etl_elt_pipelines">
+            <description>Standardized Pipelines</description>
+        </pattern>
+        <pattern name="data_validation_procedures">
+            <description>Data Quality Checks</description>
+        </pattern>
+        <pattern name="storage_solutions">
+            <description>Optimized Storage for Different Data Types</description>
+        </pattern>
+        <pattern name="data_governance">
+            <description>Access Controls - Compliance Management</description>
+        </pattern>
+    </topic>
+    <topic name="core_iac_configuration_patterns">
+        <pattern name="modular_iac_cdktf_terraform">
+            <description>Use AWS CDK constructs or Terraform modules to encapsulate Amazon Bedrock configurations and IAM roles into reusable, high-level abstractions.</description>
+        </pattern>
+        <pattern name="centralized_secret_parameter_management">
+            <description>Decouple configuration from code using AWS Secrets Manager and Parameter Store to handle environment-specific overrides (Dev/Staging/Prod).</description>
+        </pattern>
+        <pattern name="gitops_semantic_versioning">
+            <description>Treat infrastructure as code with full audit trails. Apply Semantic Versioning to infrastructure components to manage compatibility and controlled rollouts.</description>
+        </pattern>
+    </topic>
+    <topic name="validation_governance">
+        <constraint name="automated_compliance">
+            <description>Integrate AWS Config and Security Hub to trigger real-time policy checks before components become operational.</description>
+        </constraint>
+        <constraint name="model_registry_governance">
+            <description>Use Amazon SageMaker Model Registry to track versioning, lineage, and approval workflows for custom or fine-tuned foundation models.</description>
+        </constraint>
+        <constraint name="architecture_decision_records">
+            <description>Document the why behind design choices (e.g., why a specific model or region was chosen) to ensure long-term maintainability.</description>
+        </constraint>
+    </topic>
+    <topic name="resiliency_scale_strategies">
+        <pattern name="regional_deployment_patterns_active_active">
+            <description>For global low-latency and high availability.</description>
+        </pattern>
+        <pattern name="regional_data_residency">
+            <description>Design components to isolate data processing within specific geographic boundaries to meet regulatory requirements.</description>
+        </pattern>
+        <pattern name="prompt_libraries">
+            <description>Centralize high-value prompts (e.g., via Amazon Bedrock Prompt Management) to eliminate redundant engineering and maintain output quality across teams.</description>
+        </pattern>
+    </topic>
+    <topic name="optimization_quality_control">
+        <constraint name="human_in_the_loop">
+            <description>Integrate human review for AI outputs with low confidence scores to build trust and improve model accuracy over time.</description>
+        </constraint>
+        <constraint name="graceful_degradation">
+            <description>Design components to maintain core functionality even if specific GenAI dependencies or regions are unavailable.</description>
+        </constraint>
+    </topic>
+</atomic_structure>
+
+This XML structure is based on the provided content and follows the rules specified. Each topic has its own set of patterns, constraints, or metrics, which are nested under their respective topics. The IDs for each tag are descriptive, unique, and in snake_case format as required.

@@ -46,3 +46,26 @@ COMMON_RESPONSES: Final = {
     429: {"description": MSG_RATE_LIMIT},
     500: {"description": MSG_INTERNAL_ERROR},
 }
+
+# Códigos para fallos en Agentes Individuales
+ERR_CODE_AGENT_FAILURE = "AGT_500"
+ERR_CODE_ATOMICITY_FAILURE = "AGT_001"
+ERR_CODE_NAMING_FAILURE = "AGT_002"
+
+# Códigos para fallos en el Orquestador
+ERR_CODE_ORCHESTRATION_ERROR = "ORCH_500"
+ERR_CODE_PIPELINE_INTERRUPTED = "ORCH_001"
+
+# Agent Messages
+MSG_AGENT_ERROR = "One of the AI specialists failed to complete its assigned task."
+MSG_ATOMICITY_ERROR = "Failed to segment the document into atomic blocks."
+
+# Orchestration Messages
+MSG_ORCHESTRATION_ERROR = (
+    "A critical error occurred while coordinating the document pipeline."
+)
+MSG_PIPELINE_SUCCESS = "Document successfully processed, reordered, and enriched."
+
+
+MSG_PARSER_FAILURE = "An unexpected error occurred while parsing content."
+ERR_CODE_PARSER_FAILURE = "PARSER_FAILURE"

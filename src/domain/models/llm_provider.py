@@ -6,9 +6,12 @@ from typing import Any
 class LLMInferenceConfig:
     """Pure inference parameters used by the model engine."""
 
-    temperature: float = 0.7
+    temperature: float = 0.0
     max_tokens: int = 4096
     top_p: float = 0.9
+    presence_penalty: float = 0.0
+    seed: int = 42
+    stop: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
         """Utility to pass directly to providers like ollama.chat(options=...)"""
@@ -16,6 +19,9 @@ class LLMInferenceConfig:
             "temperature": self.temperature,
             "num_predict": self.max_tokens,
             "top_p": self.top_p,
+            "presence_penalty": self.presence_penalty,
+            "seed": self.seed,
+            "stop": self.stop,
         }
 
 

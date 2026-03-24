@@ -1,4 +1,8 @@
+# src/domain/ports/llm_provider.py
+
 from typing import Any, Protocol, runtime_checkable
+
+from domain.models.llm_provider import LLMInferenceConfig
 
 
 @runtime_checkable
@@ -10,11 +14,14 @@ class LLMProviderPort(Protocol):
     """
 
     async def generate(
-        self, messages: list[dict[str, str]], tools: list[dict[str, Any]] | None = None
+        self,
+        messages: list[dict[str, str]],
+        tools: list[dict[str, Any]] | None = None,
+        inference: LLMInferenceConfig | None = None,
     ) -> dict[str, Any]:
         """
         Main asynchronous contract for chat and tool-calling capabilities.
-        Returns a dictionary containing the assistant's response or tool calls.
+        Allows passing optional inference parameters to override default settings.
         """
         ...
 

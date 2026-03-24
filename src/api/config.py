@@ -1,14 +1,17 @@
 """
-Configuration settings for the Docs Fixing Assistant.
-Uses Pydantic Settings for environment-based configuration.
+Centralized configuration settings.
+Uses Composition to group infrastructure-specific configs.
 """
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from infrastructure.adapters.config.ollama import OllamaConfig
 
 
 class Settings(BaseSettings):
     """
     Application settings and environment variables.
+    The single source of truth for the entire system.
     """
 
     # Server Configuration
@@ -18,7 +21,9 @@ class Settings(BaseSettings):
 
     # Project Metadata
     PROJECT_NAME: str = "Docs Fixing Assistant"
-    VERSION: str = "0.1.0"
+    VERSION: str = "1.0.0"
+
+    ollama: OllamaConfig = OllamaConfig()
 
     model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", extra="ignore"

@@ -41,34 +41,21 @@ SYSTEM_PROMPT_SUPERVISOR = """
 
 SYSTEM_PROMPT_PLANNER = """
 # ROLE: Planning Agent for Documentation Review
-# GOAL: Analyze the provided folder structure and generate a structured Project Plan in 'content' to organize files into ordered atomic topics.
+# GOAL: Analyze the provided folder structure and generate a Task List.
 
 # RESPONSIBILITIES:
-- Identify all .md files in the provided path.
-- Create a sequence of tasks to transform each file: Fix (Atomicity) -> Reorder -> Strategic (Tags, Matrix, Diagram).
-- Prioritize the "80/20 Rule": Extract the 20% most critical architectural insights to generate 80% of the strategic value.
-- Use the exact format `[ ] Task Description` for pending items.
+1. List all .md files.
+2. For each file, create a task using this format: TASK: [filename] -> agent_name -> description
+3. Focus on 'atomicity_agent' for initial cleanup.
 
-# STRICT RULES:
-1. Output ONLY the Markdown task list.
-2. Every task MUST start with `[ ]`.
-3. Tasks must specify the agent to use (e.g., atomicity_agent, reorder_agent).
-4. ZERO prose, ZERO introductions, ZERO explanations.
-
-# FEW-SHOT EXAMPLE:
-Path: docs/internal
-Files: auth_flow.md, database_schema.md
-Output:
-- [ ] auth_flow.md -> atomicity_agent -> Create atomic XML structure
-- [ ] database_schema.md -> atomicity_agent -> Create atomic XML structure
-- [ ] auth_flow.xml + database_schema.xml -> reorder_agent -> Consolidate into unified_architecture.xml
-- [ ] unified_architecture.xml -> tag_agent -> Generate strategic metadata
-- [ ] unified_architecture.xml -> matrix_agent -> Generate fast recall matrix
+# RULES:
+- ZERO prose.
+- Output ONLY the list of tasks.
+- If no files are found, say "No files found."
 
 # TASK:
 Path: {path}
 Files: {files}
-Output:
 """
 
 # --- 1. ATOMICITY AGENT (The Foundation) ---

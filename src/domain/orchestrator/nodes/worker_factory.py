@@ -1,6 +1,7 @@
 from typing import Any
 
 from domain.orchestrator.nodes.base_worker_node import BaseWorkerNode
+from domain.orchestrator.nodes.planner_node import PlannerNode
 from domain.orchestrator.tool_registry import ToolRegistry
 
 
@@ -20,6 +21,16 @@ class WorkerFactory:
         The specialization comes from the provided config (system prompt).
         """
         return BaseWorkerNode(
+            config=config,
+            max_iterations=self.max_iterations,
+            tool_registry=self.tool_registry,
+        )
+
+    def create_planner(self, config: Any) -> PlannerNode:
+        """
+        Creates a specialized Planner instance.
+        """
+        return PlannerNode(
             config=config,
             max_iterations=self.max_iterations,
             tool_registry=self.tool_registry,

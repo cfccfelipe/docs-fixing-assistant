@@ -96,10 +96,14 @@ class BaseNode(NodePort):
                 )
             )
 
+        stop_sequences = ["###", "User:"]
+        if prefill:
+            stop_sequences.append("}\n")
+
         new_inference = LLMInferenceConfig(
             temperature=getattr(self.config, "temperature", 0.0),
             max_tokens=getattr(self.config, "max_tokens", 512),
-            stop=["}\n", "###", "User:"],
+            stop=stop_sequences,
         )
 
         final_request = replace(

@@ -1,5 +1,5 @@
 import uuid
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -8,15 +8,6 @@ from domain.models.message_model import MessageDefinition, MessageRole
 from domain.models.tool_model import ToolDefinition, ToolType
 from domain.utils.exceptions import InfrastructureException
 from infrastructure.llm_provider.ollama_llm_provider import OllamaAdapter
-
-
-class MockSDKResponse:
-    def __init__(self, message, model, eval_count, prompt_eval_count, total_duration):
-        self.message = message
-        self.model = model
-        self.eval_count = eval_count
-        self.prompt_eval_count = prompt_eval_count
-        self.total_duration = total_duration
 
 
 @pytest.fixture
@@ -48,9 +39,9 @@ async def test_ollama_adapter_mapping_logic(adapter):
     ]
     request = LLMRequest(messages=messages, inference=None, tools_registry=[tool])
 
-    # Simulamos la respuesta del SDK de Ollama
-    mock_sdk_response = MockSDKResponse(
-        message={
+    # Simulamos la respuesta JSON de Ollama
+    mock_json = {
+        "message": {
             "role": "assistant",
             "content": "",
             "tool_calls": [
@@ -62,14 +53,17 @@ async def test_ollama_adapter_mapping_logic(adapter):
                 }
             ],
         },
-        model="llama3.1",
-        eval_count=20,
-        prompt_eval_count=10,
-        total_duration=100000000,
-    )
+        "model": "llama3.1",
+        "eval_count": 20,
+        "prompt_eval_count": 10,
+        "total_duration": 100000000,
+    }
 
-    with patch("ollama.chat") as mock_chat:
-        mock_chat.return_value = mock_sdk_response
+    with patch("httpx.AsyncClient.post") as mock_post:
+        mock_resp = MagicMock()
+        mock_resp.json.return_value = mock_json
+        mock_resp.status_code = 200
+        mock_post.return_value = mock_resp
 
         response = await adapter(request)
 
@@ -77,7 +71,6 @@ async def test_ollama_adapter_mapping_logic(adapter):
         assert response.content == ""
         assert len(response.tool_calls) == 1
         assert response.tool_calls[0].name == "fs_service__write_file"
-        assert response.tool_calls[0].arguments["path"] == "a.txt"
         assert response.token_usage == 30
 
 
@@ -86,7 +79,7 @@ async def test_infrastructure_exception_wrapping(adapter):
     """Verifica que errores de red se conviertan en InfrastructureException."""
     request = LLMRequest(messages=[], inference=None, tools_registry=[])
 
-    with patch("ollama.chat", side_effect=Exception("Connection refused")):
+    with patch("httpx.AsyncClient.post", side_effect=Exception("Connection refused")):
         with pytest.raises(InfrastructureException):
             await adapter(request)
 

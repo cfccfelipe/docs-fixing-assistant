@@ -9,6 +9,8 @@ The routing tokens match the Agent IDs exactly.
 
 # IDs reales de los agentes en el sistema
 VALID_ROUTING_KEYS: Final[list[str]] = [
+    "supervisor",
+    "planner_agent",
     "atomicity_agent",
     "reordering_agent",
     "tag_agent",

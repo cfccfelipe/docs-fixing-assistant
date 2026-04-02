@@ -25,7 +25,6 @@ class MockAgentConfig:
 def base_node():
     config = MockAgentConfig()
     config.llm_provider = AsyncMock()
-    # BaseNode(config, max_iterations)
     return BaseNode(config=config, max_iterations=3)
 
 
@@ -36,6 +35,7 @@ def initial_state():
         iteration=0,
         metadata=StateMetadata(token_usage=50, input_tokens=25, output_tokens=25),
         folder_path="test",
+        content="Some content", # Added content to avoid auto-routing to planner
     )
 
 
@@ -46,25 +46,18 @@ def initial_state():
 async def test_circuit_breaker_triggers(base_node, initial_state):
     """
     Verifica que el bucle se detenga al alcanzar el max_iterations.
-    Ajustado para acceder a los datos como diccionario/objeto de forma robusta.
     """
-    initial_state.iteration = 3  # Coincide con max_iterations del fixture
+    initial_state.iteration = 3
 
     result = await base_node(initial_state)
 
-    # 1. Si el resultado es un StateUpdate o Dict, accedemos por llave o get
-    # para evitar el AttributeError
-    stop_reason = getattr(result, "stop_reason", None) or result.get("stop_reason")
-    error_message = getattr(result, "error_message", "") or result.get(
-        "error_message", ""
-    )
-
-    assert stop_reason == StopReason.END
-    assert "Circuit Breaker" in error_message
+    assert result["stop_reason"] == StopReason.END
+    assert "Circuit Breaker" in result["error_message"]
 
 
 def test_iteration_increments(base_node, initial_state):
     """Verifica el incremento quirúrgico de la iteración."""
+    # _get_execution_delta returns iteration+1 if content is present and not at limit
     result = base_node._get_execution_delta(initial_state)
     assert result["iteration"] == 1
 
@@ -90,51 +83,48 @@ def test_metadata_accumulation(base_node, initial_state):
     assert new_metadata.last_agent_key == "test_agent"
 
 
-# --- Tests de Inferencia y Parsing (Ajustados a ToolCalls) ---
+# --- Tests de Inferencia y Parsing ---
 
 
-def test_parse_response_with_tool_objects(base_node):
+def test_parse_response_with_tool_objects(base_node, initial_state):
     """
-    CORRECCIÓN: Valida que tool_calls (objetos) disparen StopReason.CALL
-    en lugar de usar los antiguos IDs planos.
+    Valida que tool_calls (objetos) disparen StopReason.CALL.
     """
     mock_call = ToolCall(id="call_1", name="read_file", arguments={"path": "a.txt"})
     mock_response = LLMResponse(
         model="test", content="I will read this.", tool_calls=[mock_call]
     )
 
-    parsed = base_node._parse_response(mock_response)
+    parsed = base_node._parse_response(mock_response, initial_state)
 
     assert parsed["stop_reason"] == StopReason.CALL
     assert len(parsed["tool_calls"]) == 1
     assert parsed["tool_calls"][0].name == "read_file"
 
 
-def test_parse_response_json_with_injected_stop_reason(base_node):
+def test_parse_response_json_with_injected_stop_reason(base_node, initial_state):
     """Verifica que si el JSON no trae stop_reason, se inyecte CALL por defecto."""
     mock_response = LLMResponse(
         model="test", content='{"result": "success"}', tool_calls=[]
     )
 
     with patch("domain.utils.response_parser.ResponseParser.parse_json") as mock_parser:
-        # El parser devuelve el dict, pero sin stop_reason
         mock_parser.return_value = {"result": "success"}
 
-        parsed = base_node._parse_response(mock_response)
+        parsed = base_node._parse_response(mock_response, initial_state)
 
         assert parsed["result"] == "success"
-        # Debe inyectar CALL para que el orquestador siga al siguiente nodo
         assert parsed["stop_reason"] == StopReason.CALL
 
 
-def test_parse_response_error_on_invalid_json(base_node):
+def test_parse_response_error_on_invalid_json(base_node, initial_state):
     """Valida que un JSON roto resulte en StopReason.ERROR."""
     mock_response = LLMResponse(model="test", content="{broken json", tool_calls=[])
 
     with patch("domain.utils.response_parser.ResponseParser.parse_json") as mock_parser:
-        mock_parser.return_value = None  # Simula fallo de parsing
+        mock_parser.return_value = None
 
-        parsed = base_node._parse_response(mock_response)
+        parsed = base_node._parse_response(mock_response, initial_state)
 
         assert parsed["stop_reason"] == StopReason.ERROR
-        assert parsed["parsing_failed"] is True
+        assert parsed.get("parsing_failed") is True

@@ -3,3 +3,7 @@ venv/*
 .venv/*
 docs_fixing_assistant.egg-info
 __pycache__
+config/local.env
+config/secrets.json
+output/
+.pytest_cache

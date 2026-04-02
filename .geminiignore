@@ -1,0 +1,12 @@
+# Gemini CLI - Context Exclusions
+.venv/
+__pycache__/
+.pytest_cache/
+.git/
+.vscode/
+uv.lock
+pyproject.toml
+output/
+config/
+*.pyc
+*.egg-info/

@@ -1,32 +1,38 @@
-# src/domain/ports/llm_provider.py
+from typing import Protocol, runtime_checkable
 
-from typing import Any, Protocol, runtime_checkable
-
-from domain.models.llm_provider import LLMInferenceConfig
+from domain.models.llm_provider_model import BaseLLMConfig, LLMRequest, LLMResponse
 
 
 @runtime_checkable
 class LLMProviderPort(Protocol):
     """
-    Contract for LLM providers.
-    Standardized as asynchronous to enable non-blocking communication
-    with local and cloud-based models.
+    Universal asynchronous contract for LLM providers.
+    Uses the Request-Response DTO pattern to ensure architectural stability
+    and decoupling from infrastructure-specific SDKs.
+
+    This port is implemented as a 'callable' (__call__) to align with
+    modern Python functional patterns in AI orchestration.
     """
 
-    async def generate(
-        self,
-        messages: list[dict[str, str]],
-        tools: list[dict[str, Any]] | None = None,
-        inference: LLMInferenceConfig | None = None,
-    ) -> dict[str, Any]:
+    config: BaseLLMConfig
+
+    async def __call__(self, request: LLMRequest) -> LLMResponse:
         """
-        Main asynchronous contract for chat and tool-calling capabilities.
-        Allows passing optional inference parameters to override default settings.
+        Executes the inference request and returns a standardized response.
+
+        Args:
+            request: A structured LLMRequest containing messages, tools,
+                    inference config, and output format.
+
+        Returns:
+            A standardized LLMResponse DTO containing content, tool calls,
+            and detailed telemetry (tokens and duration).
         """
         ...
 
     async def check_health(self) -> bool:
         """
-        Verifies asynchronously if the connection to the LLM service is active.
+        Verifies the availability of the LLM service.
+        Used for circuit breaker initialization and health monitoring.
         """
         ...

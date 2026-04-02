@@ -19,7 +19,6 @@ def handle_errors(exception_cls: Any, **extra_context: str):
                 try:
                     return await func(*args, **kwargs)
                 except (exception_cls, asyncio.CancelledError):
-                    # Re-lanzamos sin envolver para permitir la cancelación limpia
                     raise
                 except Exception as e:
                     _log_and_raise(func, e, exception_cls, extra_context)

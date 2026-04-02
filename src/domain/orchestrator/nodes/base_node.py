@@ -86,7 +86,12 @@ class BaseNode(NodePort):
     async def _execute_inference(self, request: LLMRequest) -> LLMResponse:
         """Executes inference with 'Assistant Prefilling' and Surgical Cleaning."""
         fmt = getattr(self.config, "output_format", "json").lower()
-        prefill = "{" if fmt == "json" else ""
+        
+        # Only prefill if we are in JSON mode AND no tools are being used
+        # (Prefilling can interfere with some models' tool-calling trigger)
+        prefill = ""
+        if fmt == "json" and not request.tools_registry:
+            prefill = "{"
 
         updated_messages = list(request.messages)
         if prefill:

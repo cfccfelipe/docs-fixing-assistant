@@ -68,39 +68,51 @@ class SupervisorNode(BaseNode):
         return self._build_routing_update(state, parsed_data, response, delta)
 
     def _build_routing_update(self, state, parsed, response, delta) -> StateUpdate:
-        if parsed.get("parsing_failed"):
-            return self._handle_parsing_failure(state, response)
-
         raw_reason = parsed.get("stop_reason", StopReason.CALL)
         next_agent = parsed.get("next_agent")
         next_task = parsed.get("next_task")
+        content = state.content
 
-        # Caso especial: plan vacío -> planner_agent
-        if not state.content or not state.content.strip():
+        # 1. Post-Processing: Mark previous task as done if it was a specialist
+        last_agent = state.metadata.last_agent_key if state.metadata else None
+        if last_agent not in ["supervisor", "planner_agent", None] and state.next_task:
+            content = content.replace(f"- [ ] {state.next_task}", f"- [x] {state.next_task}")
+
+        # 2. Routing Decision based on current Plan (Prioritized over LLM if parsing failed)
+        if not content or not content.strip():
             next_agent = "planner_agent"
             stop_reason = StopReason.CALL
-        # Caso especial: tareas pendientes -> coder_agent
-        elif "- [ ]" in state.content:
-            next_agent = "coder_agent"
+        elif "- [ ]" in content:
             stop_reason = StopReason.CALL
             # Extraer la primera tarea pendiente literal
             pending_lines = [
-                line
-                for line in state.content.splitlines()
-                if line.strip().startswith("- [ ]")
+                line.strip()
+                for line in content.splitlines()
+                if "- [ ]" in line
             ]
             if pending_lines:
-                next_task = pending_lines[0].replace("- [ ]", "").strip()
-        # Caso especial: todas las tareas completadas -> END
-        elif "- [x]" in state.content and "- [ ]" not in state.content:
+                task_line = pending_lines[0]
+                next_task = task_line.replace("- [ ]", "").strip()
+                
+                # Dynamic Agent Extraction: "- [ ] file.md -> agent_id -> description"
+                if "->" in next_task:
+                    parts = [p.strip() for p in next_task.split("->")]
+                    if len(parts) >= 2:
+                        next_agent = parts[1]
+                else:
+                    next_agent = "coder_agent"
+        elif "- [x]" in content and "- [ ]" not in content:
             next_agent = None
             stop_reason = StopReason.END
-        elif next_agent is None and raw_reason != StopReason.ERROR:
-            stop_reason = StopReason.END
         else:
+            # Fallback to LLM if no plan logic triggered
             stop_reason = (
                 raw_reason if isinstance(raw_reason, StopReason) else StopReason.CALL
             )
+
+        # 3. Handle Parsing Failures (Only if no routing was decided)
+        if parsed.get("parsing_failed") and next_agent is None:
+            return self._handle_parsing_failure(state, response)
 
         final_resp = parsed.get("final_response")
         if stop_reason == StopReason.END and not final_resp:
@@ -114,6 +126,7 @@ class SupervisorNode(BaseNode):
 
         return StateUpdate(
             folder_path=state.folder_path,
+            content=content,
             iteration=delta.get("iteration", state.iteration + 1),
             next_agent=next_agent,
             next_task=next_task,

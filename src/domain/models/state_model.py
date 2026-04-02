@@ -37,6 +37,7 @@ class AgentState:
     # State Data
     content: str = ""
     current_file: str | None = None
+    task_result: str = ""  # Output of the current specialist task
 
     # Orchestration & Flow Control
     iteration: int = 0
@@ -67,6 +68,7 @@ class StateUpdate(TypedDict, total=False):
     folder_path: str  # Mantenemos consistencia en el path
     content: str
     current_file: str | None
+    task_result: str
     iteration: int
     next_task: str | None
     next_agent: str | None

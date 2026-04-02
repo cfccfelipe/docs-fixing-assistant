@@ -34,6 +34,7 @@ class OllamaAdapter(LLMProviderPort):
 
         messages = self._map_messages(request.messages)
         options = self._prepare_options(request.inference)
+        tools = self._map_tools(request.tools_registry)
 
         is_json = "json" in str(getattr(self.config_llm, "output_format", "")).lower()
         if getattr(request.inference, "json_mode", False):
@@ -45,6 +46,8 @@ class OllamaAdapter(LLMProviderPort):
             "options": options,
             "stream": False,
         }
+        if tools:
+            payload["tools"] = tools
         if is_json:
             payload["format"] = "json"
 
@@ -120,6 +123,21 @@ class OllamaAdapter(LLMProviderPort):
 
     def _map_messages(self, chat_messages: list[MessageDefinition]) -> list[dict[str, Any]]:
         return [{"role": m.role.value, "content": m.content_history} for m in chat_messages]
+
+    def _map_tools(self, tools: Any) -> list[dict[str, Any]] | None:
+        if not tools:
+            return None
+        return [
+            {
+                "type": "function",
+                "function": {
+                    "name": f"{t.server_name}__{t.name}" if t.server_name else t.name,
+                    "description": t.description,
+                    "parameters": t.arguments,
+                },
+            }
+            for t in tools
+        ]
 
     async def check_health(self) -> bool:
         try:

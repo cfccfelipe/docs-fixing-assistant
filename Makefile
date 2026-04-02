@@ -1,10 +1,10 @@
 .PHONY: test lint format clean run
 
 test:
-	uv run pytest tests/unit
+	uv run pytest tests/unit -q --tb=line
 
 test-integration:
-	uv run pytest tests/integration -m integration
+	uv run pytest tests/integration -q --tb=line
 
 lint:
 	uv run ruff check src tests

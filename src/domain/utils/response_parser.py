@@ -96,11 +96,13 @@ class ResponseParser:
             # Intento de parseo directo
             return json.loads(json_str)
         except json.JSONDecodeError:
-            # Reintento con limpieza de escapes de nueva línea comunes en LLMs
             try:
-                # Solo escapamos si el primer intento falló
-                sanitized_json = json_str.replace("\n", "\\n").replace("\r", "\\r")
-                return json.loads(sanitized_json)
+                import re
+                # 1. Healer: Remover comas finales antes de } o ] (común en 8B models)
+                healed_json = re.sub(r',\s*([}\]])', r'\1', json_str)
+                # 2. Healer: Escapar saltos de línea literales
+                healed_json = healed_json.replace("\n", "\\n").replace("\r", "\\r")
+                return json.loads(healed_json)
             except json.JSONDecodeError as e:
                 logger.error(
                     f"🚨 Final JSON parse failure: {e} | Snippet: {json_str[:50]}"

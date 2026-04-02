@@ -41,15 +41,16 @@ SYSTEM_PROMPT_SUPERVISOR = """
 
 SYSTEM_PROMPT_PLANNER = """
 # ROLE: Planning Agent for Documentation Review
-# GOAL: Analyze the provided folder structure and generate a Task List.
+# GOAL: Analyze the provided folder structure and generate a Task List using Markdown checklist format.
 
 # RESPONSIBILITIES:
 1. List all .md files.
-2. For each file, create a task using this format: TASK: [filename] -> agent_name -> description
+2. For each file, create a task using this EXACT format: - [ ] filename.md -> atomicity_agent -> description
 3. Focus on 'atomicity_agent' for initial cleanup.
 
 # RULES:
 - ZERO prose.
+- Every task MUST start with '- [ ]'.
 - Output ONLY the list of tasks.
 - If no files are found, say "No files found."
 
@@ -61,7 +62,13 @@ Files: {files}
 # --- 1. ATOMICITY AGENT (The Foundation) ---
 SYSTEM_PROMPT_ATOMICITY = """
 # Role: XML Structuring Agent
-# Goal: Transform [LEVEL_N] segments into a strictly nested <atomic_structure> XML block.
+# Goal: Transform a document into a strictly nested <atomic_structure> XML block and save it.
+
+# OPERATIONAL PROTOCOL:
+1. READ: Use 'read_file' tool to get the content of the file mentioned in your Task.
+2. TRANSFORM: Process the text into the <atomic_structure> XML block defined below.
+3. WRITE: Use 'write_file' tool to save the resulting XML into a file under the 'xml/' directory (e.g., 'xml/filename.xml').
+4. SUCCESS: Once the file is written, return a confirmation message in your content.
 
 # Tag Dictionary:
 - <topic id="...">: Section titles, high-level themes, or categories (LEVEL_2).
@@ -78,16 +85,13 @@ SYSTEM_PROMPT_ATOMICITY = """
 4. LITERAL FIDELITY: Copy input text exactly. Do not summarize, rephrase, or omit any details.
 
 # ID Uniqueness Protocol (Hard Requirement):
-1. DESCRIPTIVE SLUGS: Generate IDs by summarizing the UNIQUE core intent of the segment (e.g., instead of `document_clearly`, use `document_accuracy_expectations`).
-2. COLLISION AVOIDANCE: If two segments are semantically similar, append a clarifying suffix (e.g., `_modalities`, `_latency`).
-3. NO EXAMPLES: Never use the ID examples provided in this prompt.
-4. FORMATTING: Use only snake_case.
-
-"PROCESS EVERY SEGMENT: Even if the input is 5,000 words, you must process every single line. Never say 'Rest of the content is the same' or similar shortcuts.
+1. DESCRIPTIVE SLUGS: Generate IDs by summarizing the UNIQUE core intent of the segment.
+2. COLLISION AVOIDANCE: If two segments are semantically similar, append a clarifying suffix.
+3. FORMATTING: Use only snake_case.
 
 # Output Constraints:
-- Output ONLY the <atomic_structure> XML block.
-- NO prose, NO markdown fences (```xml), NO quotes, NO explanation.
+- Use tools for file operations.
+- If you use 'write_file', your final content should just be "Task completed: file saved to [path]".
 - Preserve the domain-specific wording and technical terminology exactly.
 """
 

@@ -27,72 +27,101 @@ class BaseWorkerNode(BaseNode):
         if "stop_reason" in delta:
             return StateUpdate(metadata=self._create_metadata(state), **delta)
 
-        request = LLMRequest(
-            messages=[
-                MessageDefinition(
-                    id=uuid.uuid4(),
-                    role=MessageRole.SYSTEM,
-                    content_history=self.config.system_prompt,
-                ),
-                MessageDefinition(
-                    id=uuid.uuid4(),
-                    role=MessageRole.USER,
-                    content_history=f"Task: {state.next_task}\nContext: {state.content}",
-                ),
-            ],
-            tools_registry=self._get_tools_definitions(),
-            inference=LLMInferenceConfig(
-                temperature=getattr(self.config, "temperature", 0.0),
-                max_tokens=getattr(self.config, "max_tokens", 1024),
+        messages = [
+            MessageDefinition(
+                id=uuid.uuid4(),
+                role=MessageRole.SYSTEM,
+                content_history=self.config.system_prompt,
             ),
-        )
+            MessageDefinition(
+                id=uuid.uuid4(),
+                role=MessageRole.USER,
+                content_history=f"Task: {state.next_task}\nContext: {state.content}",
+            ),
+        ]
 
-        response: LLMResponse = await self._execute_inference(request)
+        task_results = []
+        node_iterations = 0
+        max_node_iters = 5 # Prevent infinite internal loops
 
-        # FIX 1: Validación de ToolRegistry y acceso a tool_calls (no solo IDs)
-        if response.tool_calls and self.tool_registry:
-            return await self._handle_infrastructure_calls(state, response)
+        while node_iterations < max_node_iters:
+            node_iterations += 1
+            request = LLMRequest(
+                messages=messages,
+                tools_registry=self._get_tools_definitions(),
+                inference=LLMInferenceConfig(
+                    temperature=getattr(self.config, "temperature", 0.0),
+                    max_tokens=getattr(self.config, "max_tokens", 1024),
+                ),
+            )
+
+            response: LLMResponse = await self._execute_inference(request)
+            
+            # Si no hay tool calls, terminamos el bucle interno
+            if not response.tool_calls or not self.tool_registry:
+                return StateUpdate(
+                    task_result="\n".join(task_results) if task_results else response.content,
+                    next_agent="supervisor",
+                    stop_reason=StopReason.CALL,
+                    metadata=self._create_metadata(state, response),
+                    iteration=state.iteration + 1,
+                )
+
+            # Ejecutar herramientas
+            results, errors = await self._execute_tools(response.tool_calls)
+            task_results.extend(results)
+            
+            # Actualizar historial para la siguiente vuelta
+            # 1. Agregar la respuesta del asistente (con las tool_calls)
+            messages.append(MessageDefinition(
+                id=uuid.uuid4(),
+                role=MessageRole.ASSISTANT,
+                content_history=response.content,
+                tool_calls=response.tool_calls
+            ))
+            # 2. Agregar los resultados de las herramientas
+            for i, res in enumerate(results):
+                messages.append(MessageDefinition(
+                    id=uuid.uuid4(),
+                    role=MessageRole.TOOL,
+                    content_history=res,
+                    # Relacionar con el ID de la llamada si es posible
+                ))
+
+            if errors:
+                return StateUpdate(
+                    task_result="\n".join(task_results),
+                    error_message="; ".join(errors),
+                    next_agent="supervisor",
+                    stop_reason=StopReason.ERROR,
+                    metadata=self._create_metadata(state, response),
+                    iteration=state.iteration + 1,
+                )
 
         return StateUpdate(
-            content=response.content,
+            task_result="\n".join(task_results),
+            error_message="Internal node iteration limit reached.",
             next_agent="supervisor",
-            stop_reason=StopReason.CALL,
-            metadata=self._create_metadata(state, response),
+            stop_reason=StopReason.ERROR,
+            metadata=self._create_metadata(state),
             iteration=state.iteration + 1,
         )
 
-    async def _handle_infrastructure_calls(
-        self, state: AgentState, response: LLMResponse
-    ) -> StateUpdate:
+    async def _execute_tools(self, tool_calls: list[ToolCall]) -> tuple[list[str], list[str]]:
         results = []
         errors = []
-
-        # FIX 2: Type Guard para asegurar que tool_registry existe antes de execute
         if not self.tool_registry:
-            return StateUpdate(
-                error_message="ToolRegistry missing during tool call attempt.",
-                stop_reason=StopReason.ERROR,
-                metadata=self._create_metadata(state, response),
-            )
+            return [], ["ToolRegistry missing"]
 
-        for call in response.tool_calls:
+        for call in tool_calls:
             try:
-                # Ahora 'call' es un objeto ToolCall con .name y .arguments
                 result = self.tool_registry.execute(call.name, **call.arguments)
                 results.append(f"Tool {call.name} output: {result}")
             except Exception as e:
                 error_msg = f"Error in {call.name}: {str(e)}"
                 logger.error(f"🚨 {error_msg}")
                 errors.append(error_msg)
-
-        return StateUpdate(
-            content="\n".join(results),
-            error_message="; ".join(errors) if errors else None,
-            next_agent="supervisor",
-            stop_reason=StopReason.ERROR if errors else StopReason.CALL,
-            metadata=self._create_metadata(state, response),
-            iteration=state.iteration + 1,
-        )
+        return results, errors
 
     def _get_tools_definitions(self) -> list[Any]:
         if not self.tool_registry:

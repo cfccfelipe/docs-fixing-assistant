@@ -61,7 +61,7 @@ class PlannerNode(BaseWorkerNode):
                     content_history=f"Context: {state.content or 'Empty plan'}",
                 ),
             ],
-            tools_registry=self._get_tools_definitions(),
+            tools_registry=[], # El planner ya usó las tools programáticamente, no las necesita el LLM
             inference=LLMInferenceConfig(
                 temperature=getattr(self.config, "temperature", 0.0),
                 max_tokens=getattr(self.config, "max_tokens", 1024),

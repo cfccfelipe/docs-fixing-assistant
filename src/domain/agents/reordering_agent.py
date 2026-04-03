@@ -2,7 +2,7 @@ import asyncio
 import logging
 import re
 
-from domain.constants import system_prompts, users_prompts
+from domain.orchestrator.constants import system_prompts, user_prompts
 from domain.ports.agent import AgentPort
 from domain.ports.llm_provider import LLMProviderPort
 
@@ -23,7 +23,7 @@ class ReorderingAgent(AgentPort):
 
         messages = [
             {"role": "system", "content": system_prompts.SYSTEM_PROMPT_REORDER},
-            {"role": "user", "content": users_prompts.USER_PROMPT_REORDER},
+            {"role": "user", "content": user_prompts.USER_PROMPT_REORDER},
             {"role": "user", "content": content},
         ]
 

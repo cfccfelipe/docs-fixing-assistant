@@ -1,21 +1,26 @@
 import logging
 import uuid
+import re
+from pathlib import Path
 from typing import Any
 
-from domain.models.enums import MessageRole
+from domain.models.enums import MessageRole, StopReason
 from domain.models.llm_provider_model import LLMInferenceConfig, LLMRequest, LLMResponse
 from domain.models.message_model import MessageDefinition
 from domain.models.state_model import AgentState, StateUpdate
 from domain.orchestrator.nodes.base_worker_node import BaseWorkerNode
 from domain.orchestrator.tool_registry import ToolRegistry
+from domain.orchestrator.constants.system_prompts import SYSTEM_PROMPT_PLANNER
+from domain.utils.text_utils import split_markdown_by_headers
 
 logger = logging.getLogger(__name__)
 
 
 class PlannerNode(BaseWorkerNode):
     """
-    Specialized node for planning.
-    It lists files before generating the prompt to ensure the LLM has context.
+    PlannerNode plans the lifecycle for all files found in folder_path.
+    Implements semantic chunking ONLY for content-heavy agents (Atomicity, Summarizer).
+    Naming and Classification happen once per file.
     """
 
     def __init__(
@@ -27,56 +32,51 @@ class PlannerNode(BaseWorkerNode):
         super().__init__(config, max_iterations, tool_registry)
 
     async def __call__(self, state: AgentState) -> StateUpdate:
-        # 1. Explorar archivos antes de llamar al LLM
-        files = []
+        folder_path = Path(state.folder_path).resolve()
+        logger.info(f"📝 Planning for workspace: {folder_path}")
+        
+        # 1. Explorar archivos
+        exclude = ["xml", "summaries", "PLAN.md", "fixed_files"]
+        files = [f for f in folder_path.glob("*.md") if f.name not in exclude]
+        
+        if not files:
+            logger.warning(f"⚠️ No markdown files found in {folder_path}")
+            return StateUpdate(stop_reason=StopReason.END, final_response="No files found.")
+
+        # 2. Generar lista de tareas manual para control total del flujo
+        # Eliminamos la dependencia del LLM para la estructura del plan para garantizar PERSISTENCIA y DETERMINISMO.
+        plan_lines = []
+        for f in files:
+            content = f.read_text()
+            # Naming and Classification happen ONCE
+            plan_lines.append(f"- [ ] {f.name} -> naming_agent -> rename_file")
+            plan_lines.append(f"- [ ] {f.name} -> classifier_agent -> classify_domain")
+            
+            # Atomicity and Summarizer support chunking
+            if len(content) > 5000:
+                chunks = split_markdown_by_headers(content, max_chars=5000)
+                for i, _ in enumerate(chunks, 1):
+                    plan_lines.append(f"- [ ] {f.name} (Part {i}) -> atomicity_agent -> xml_conversion")
+                    plan_lines.append(f"- [ ] {f.name} (Part {i}) -> summarizer_agent -> hierarchical_summary")
+            else:
+                plan_lines.append(f"- [ ] {f.name} -> atomicity_agent -> xml_conversion")
+                plan_lines.append(f"- [ ] {f.name} -> summarizer_agent -> hierarchical_summary")
+            
+            # Tagging happens ONCE
+            plan_lines.append(f"- [ ] {f.name} -> tag_agent -> generate_metadata")
+
+        cleaned_content = "\n".join(plan_lines)
+
+        # Save to PLAN.md (PERSISTENCE)
         if self.tool_registry:
-            try:
-                # Usamos la tool directamente
-                files_data = self.tool_registry.execute("list_files", folder_path=state.folder_path)
-                
-                # Manejar tanto lista de Paths como string (según la tool)
-                if isinstance(files_data, list):
-                    files = [getattr(f, "name", str(f)) for f in files_data]
-                else:
-                    files = [f.strip() for f in str(files_data).split("\n") if f.strip()]
-            except Exception as e:
-                logger.error(f"Error listing files for planner: {e}")
+            self.tool_registry.execute("write_file", path="PLAN.md", content=cleaned_content)
+        
+        logger.info(f"✅ PLAN.md written with {len(plan_lines)} deterministic tasks.")
 
-        # 2. Formatear el prompt con la información real
-        sys_prompt = self.config.system_prompt.format(
-            path=state.folder_path,
-            files=", ".join(files) if files else "No markdown files found."
-        )
-
-        request = LLMRequest(
-            messages=[
-                MessageDefinition(
-                    id=uuid.uuid4(),
-                    role=MessageRole.SYSTEM,
-                    content_history=sys_prompt,
-                ),
-                MessageDefinition(
-                    id=uuid.uuid4(),
-                    role=MessageRole.USER,
-                    content_history=f"Context: {state.content or 'Empty plan'}",
-                ),
-            ],
-            tools_registry=[], # El planner ya usó las tools programáticamente, no las necesita el LLM
-            inference=LLMInferenceConfig(
-                temperature=getattr(self.config, "temperature", 0.0),
-                max_tokens=getattr(self.config, "max_tokens", 1024),
-            ),
-        )
-
-        response: LLMResponse = await self._execute_inference(request)
-        logger.info(f"Planner LLM Output: {response.content}")
-        from domain.models.enums import StopReason
-
-        # 3. El planner no suele llamar a tools, solo escribe el plan en content
         return StateUpdate(
-            content=response.content,
+            content=cleaned_content,
             next_agent="supervisor",
             stop_reason=StopReason.CALL,
-            metadata=self._create_metadata(state, response),
+            metadata=self._create_metadata(state),
             iteration=state.iteration + 1,
         )

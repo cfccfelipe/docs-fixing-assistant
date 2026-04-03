@@ -1,0 +1,27 @@
+<atomic_document>
+  <source>fixed_files/development/bold-bias-open-ended-language-generation-dataset.md</source>
+  <content>Open-ended language generation Dataset (BOLD) for bias
+The Amazon Nova Micro model provides ultra-fast text generation through the Chat/Text playground, delivering the lowest latency responses at minimal cost️
+Amazon Nova Lite processes combined image and text inputs rapidly at low cost, supporting efficient multimodal AI applications.
+Amazon Nova Canvas generates high-quality images from text prompts through the Image/Video playground.
+Amazon Nova Premier (Massive) or Pro
+Model distillation transfers knowledge from a large teacher model to a smaller student model.
+For proprietary data synthesis techniques, you must use only prompts.
+CloudWatch Genia observability is purpose-built to monitor and troubleshoot GenAI applications.
+Amazon Nova Pro delivers advanced text and code generation with enhanced reasoning capabilities for complex problem-solving tasks.
+- High response times -> Drop satisfaction score
+- Text-based + product image
+- Multilingual, route image to complaints, set up safe env, automated responses common question
+Use the build LoRA class `LoraConfig` from [huggingface 🤗 PEFT: State-of-the-art Parameter-Efficient Fine-Tuning](https://github.com/huggingface/peft). Within `LoraConfig`, specify the following parameters:
+
+- `r`, the dimension of the low-rank matrices
+- `lora_alpha`, the scaling factor for the low-rank matrices
+- `lora_dropout`, the dropout probability of the LoRA layers
+# **Robust Random Cut Forest (RCF)**
+
+A machine learning algorithm used **for anomaly detection**, created by Amazon and used in **Amazon SageMaker**.
+
+PEFT is Parameter efficient fine tunning or fine tuning mix with lora
+Use RLFH as well with human feedback PPO
+</content>
+</atomic_document>

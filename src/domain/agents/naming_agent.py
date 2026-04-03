@@ -2,8 +2,8 @@ import asyncio
 import hashlib
 import logging
 
-from domain.constants import users_prompts
-from domain.constants.system_prompts import SYSTEM_PROMPT_NAMING
+from domain.orchestrator.constants import user_prompts
+from domain.orchestrator.constants.system_prompts import SYSTEM_PROMPT_NAMING
 from domain.ports.agent import AgentPort
 from domain.ports.llm_provider import LLMProviderPort
 

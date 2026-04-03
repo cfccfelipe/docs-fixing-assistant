@@ -25,11 +25,11 @@ class WriteFileTool(ITool):
                 "properties": {
                     "path": {
                         "type": "string",
-                        "description": "Relative path to the file.",
+                        "description": "Relative path to the file (e.g., 'xml/doc.xml'). Parent folders will be created automatically.",
                     },
                     "content": {
                         "type": "string",
-                        "description": "The text content to write into the file.",
+                        "description": "The FULL text content to write into the file. This must NOT be empty.",
                     },
                 },
                 "required": ["path", "content"],

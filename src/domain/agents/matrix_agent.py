@@ -2,8 +2,8 @@ import asyncio
 import logging
 import re
 
-from domain.constants.system_prompts import SYSTEM_PROMPT_MATRIX
-from domain.constants.users_prompts import USER_PROMPT_MATRIX
+from domain.orchestrator.constants.system_prompts import SYSTEM_PROMPT_MATRIX
+from domain.orchestrator.constants.user_prompts import USER_PROMPT_MATRIX
 from domain.ports.agent import AgentPort
 from domain.ports.llm_provider import LLMProviderPort
 

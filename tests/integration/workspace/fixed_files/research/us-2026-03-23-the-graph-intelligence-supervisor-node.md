@@ -1,0 +1,368 @@
+---
+tags: [daily, graph-intelligence, supervisor-node]
+---
+---
+created_date: 2026-03-23
+title: 2026-03-23 - Daily
+moc: daily/2026/03
+status:
+  - open
+tags:
+  - daily
+---
+
+## 🛠 US 1: The Graph Intelligence (Supervisor Node)
+
+**User Story:** _As a System Architect, I want a Supervisor Node optimized for 8B models so that user feedback is accurately mapped to the 9 specialized agents without ambiguity._
+
+- **Acceptance Criteria (AC):**
+    
+    - The Supervisor must return **only** a comma-separated list of keys (e.g., `STRUCT_XML, MERMAID_MAP`).
+        
+    - It must implement a fallback (`PROSE_WRITER`) if the user feedback is vague or non-specific.
+        
+    - It must identify "satisfaction" keywords to trigger the `END` state of the graph.
+        
+- **Definition of Done (DoD):** Node implemented in `domain/orchestrator/nodes/supervisor.py` and validated with at least 5 different intent scenarios using Ollama.
+    
+## 🛠 US 1: The Graph Intelligence (Supervisor Node)
+
+        
+
+### **Task 1.2: State Schema Enhancement**
+
+- **Goal:** Prepare the `AgentState` to store the Supervisor's decisions.
+    
+- **Action:** Update `src/domain/models/state.py`.
+    
+- **Content:**
+    
+    - Ensure `active_agents: list[str]` is present.
+        
+    - Verify `results: Annotated[list, operator.add]` is ready to receive the routing log.
+        
+
+### **Task 1.3: Supervisor Logic Implementation**
+
+- **Goal:** Build the functional logic that calls Ollama and parses the response.
+    
+- **Action:** Create `src/domain/orchestrator/nodes/supervisor.py`.
+    
+- **Content:**
+    
+    - Implement the `SupervisorNode` class.
+        
+    - Create the `_parse_agents` private method to filter the LLM string against the `agent_map`.
+        
+    - Apply the `@handle_errors` decorator for **Infrastructure/LLM** failure isolation.
+        
+
+### **Task 1.4: Intent Mapping & Fallback Strategy**
+
+- **Goal:** Guarantee that the system never "hangs" due to empty output.
+    
+- **Action:** Logic within `SupervisorNode.__call__`.
+    
+- **Content:**
+    
+    - If the LLM returns an empty string or unrecognized keys, default to `["PROSE_WRITER"]`.
+        
+    - Log the raw output vs. the parsed output for observability.
+        
+
+### **Task 1.5: Unit Testing & Validation (DoD Check)**
+
+- **Goal:** Verify the node's behavior against the 5 scenarios required by the DoD.
+    
+- **Action:** Create `tests/unit/domain/orchestrator/test_supervisor.py`.
+    
+- **Scenarios to Test:**
+    
+    1. **Direct Match:** "Fix the XML structure" $\rightarrow$ `STRUCT_XML`.
+        
+    2. **Multi-Intent:** "Give me a diagram and study cards" $\rightarrow$ `MERMAID_MAP, STUDY_CARDS`.
+        
+    3. **Vague Feedback:** "Make it better" $\rightarrow$ `PROSE_WRITER`.
+        
+    4. **Termination:** "The result is perfect, thank you" $\rightarrow$ `END`.
+        
+    5. **Error Handling:** Simulate Ollama timeout $\rightarrow$ Ensure `OrchestrationException` is raised.
+        
+
+---
+
+### **Definition of Done (DoD) Checklist**
+
+- [ ] Code exists in `src/domain/orchestrator/nodes/supervisor.py`.
+    
+- [ ] No hardcoded strings (all prompts in `constants`).
+    
+- [ ] 100% pass on the 5 validation scenarios.
+    
+- [ ] Logic confirmed to work with an 8B model (no "chatty" output).
+
+Mi objetivo es creemos una prueba end to end actualmente agregue a integration una carpeta llamada examples dentro esta Projection(4 archivos) y Execution folders(5 archivos).  Lo que debería de hacer primero el supervisor ve que deber analizar los archivos entonces manda al primer agente(aun no existe debemos crearlo) revise si los archivos actuales necesitan separarse porque no son temas atomicos su validacion es texto(de una vez el parser limpia y debe tener filse system para evaluar el resultado accorde al formato texto que seria el deseado en este caso), este debe responder con un resumen si necsita reordenar seciones y ajustar el nombre de los archivos para usar logic low y anming agente, si es necesario se applica estas mejoras o refactoring y vuelve al supervisor puede ser en paralelo luego, vuelve el orchestrador y crea los fuentes consolidadas por carpeta donde structu_xml entra participar y el meta_props y prose_writer tambien porque crean 2 archivos distintos uno con objetivo para humanos or archivo md y el otro para maquina(xml), cuando estos estan listos finalmente llama nuevamente logic flow para que revise el archivo final solo para el archivo md consolidado. Pasado esto entra a crear los recursos con recall_table, study_cards, mermeid_map y worflow_sme, itera hasta tener buenos resultados y debe mandar a los agentes a revisar que si sea satisfactorio el resultado o compleemntar si se detecta nuevos archivos posiblemente toque mejorar 
+---
+
+## 📂 US 2: Recursive Ingestion & Content Consolidation
+
+**User Story:** _As a user, I want the system to process folders with up to 2 levels of depth so that fragmented knowledge is consolidated into a single atomic source._
+
+- **Acceptance Criteria (AC):**
+    
+    - The system must recursively read `.md` files using `pathlib` or `rglob`.
+        
+    - It must initialize an `AgentState` for each file while maintaining the folder hierarchy context.
+        
+    - It must be able to group sub-folder contents to generate a single `consolidated.xml` if requested.
+        
+- **Definition of Done (DoD):** Integration in `LocalFileSystemAdapter` with unit tests proving successful reading of nested structures.
+    
+
+## 📂 US 2: Recursive Ingestion & Content Consolidation
+
+### **Task 2.1: Recursive Directory Crawler Implementation**
+
+- **Goal:** Enable the infrastructure to detect files in nested structures (up to 2 levels).
+    
+- **Action:** Enhance `src/infrastructure/adapters/storage/local_file_system.py`.
+    
+- **Technical Detail:** * Use `pathlib.Path.rglob("*.md")` to capture all Markdown files.
+    
+    - Implement a depth-check logic to ensure the crawler respects the **2-level limit** (to prevent infinite loops or processing unwanted system directories).
+        
+
+### **Task 2.2: Metadata & Hierarchy Mapping**
+
+- **Goal:** Preserve the folder context so the AI knows where the file came from (e.g., `AWS/Networking/vpc.md`).
+    
+- **Action:** Create a helper method `_get_relative_hierarchy` in the adapter.
+    
+- **Technical Detail:** * Capture the parent folder names and inject them into the initial `AgentState`.
+    
+    - This ensures `META_PROPS` and `FILE_NAMER` have the correct categorical context.
+        
+
+### **Task 2.3: Multi-File State Initialization (Batching)**
+
+- **Goal:** Prepare the system to handle multiple `AgentState` objects simultaneously.
+    
+- **Action:** Update `src/domain/services/fixing_service.py`.
+    
+- **Technical Detail:** * Create a `process_directory` method that maps the list of files found by the adapter into a collection of `AgentState` instances.
+    
+    - Ensure each state has a unique `thread_id` (required for LangGraph persistence).
+        
+
+### **Task 2.4: Consolidation Logic (The XML Merger)**
+
+- **Goal:** Provide the ability to "Join" different files into a single `consolidated.xml`.
+    
+- **Action:** Create `src/domain/utils/xml_utils.py` or update `AtomicStorage`.
+    
+- **Technical Detail:** * Implement a function that takes multiple `<atomic_structure>` blocks and merges them under a single root node.
+    
+    - Handle ID collisions if two different files used the same `snake_case_id`.
+        
+
+---
+
+### **Definition of Done (DoD) Checklist**
+
+- [ ] `LocalFileSystemAdapter` successfully lists files in `dir/subdir/file.md`.
+    
+- [ ] Depth limit of 2 levels is strictly enforced.
+    
+- [ ] Unit tests in `tests/unit/infrastructure/storage/test_file_system.py` pass with mock nested directories.
+    
+- [ ] Memory-efficient reading (don't load all files into RAM at once; use a generator).
+---
+
+## 🤖 US 3: Self-Correcting Workers (Validation & Retries)
+
+**User Story:** _As an SRE, I want each agent to validate its own output and retry on failure so that the final documentation artifacts are technically sound and schema-compliant._
+
+- **Acceptance Criteria (AC):**
+    
+    - Each node must execute a maximum of **3 retries** if the validation fails.
+        
+    - The `STRUCT_XML` output must be validated against the `atomic_source.xsd` schema.
+        
+    - If the error persists after 3 attempts, it must raise an `OrchestrationException` with technical details for the user.
+        
+- **Definition of Done (DoD):** `EvaluationService` implemented and retry decorators applied to all 9 worker nodes in the LangGraph setup.
+
+
+## 🤖 US 3: Self-Correcting Workers (Validation & Retries)
+
+### **Task 3.1: XSD Schema Validation Engine**
+
+- **Goal:** Create a high-precision validator for the `STRUCT_XML` output.
+    
+- **Action:** Implement logic in `src/domain/services/evaluation_service.py` using the existing `atomic_source.xsd`.
+    
+- **Technical Detail:** * Use `lxml` or `xml.etree` to validate the generated string against the schema.
+    
+    - The service must return a boolean and a list of specific errors (e.g., "Missing required attribute 'id'").
+        
+
+### **Task 3.2: Universal Self-Correction Decorator**
+
+- **Goal:** Create a reusable `@retry_on_invalid` decorator for the worker nodes.
+    
+- **Action:** Update `src/domain/utils/decorators.py`.
+    
+- **Technical Detail:** * Implement a wrapper that catches validation failures.
+    
+    - Maintain a counter: if `attempt < 3`, re-call the agent with a "Correction Prompt" (e.g., "Your previous XML was invalid due to X, please fix it").
+        
+    - If `attempt == 3`, raise `OrchestrationException`.
+        
+
+### **Task 3.3: Worker Node Factory (Standardization)**
+
+- **Goal:** Convert your 9 agents into LangGraph-compatible nodes without repeating code.
+    
+- **Action:** Create `src/domain/orchestrator/nodes/worker_factory.py`.
+    
+- **Technical Detail:** * Create a function `create_worker_node(agent_instance, validator_func)` that returns an `async` function.
+    
+    - This factory will automatically apply the retry logic and update the `AgentState` results.
+        
+
+### **Task 3.4: Specialized Validation for Non-XML Agents**
+
+- **Goal:** Ensure `MERMAID_MAP`, `RECALL_TABLE`, and `STUDY_CARDS` also have basic health checks.
+    
+- **Action:** Add validation methods to `EvaluationService`.
+    
+- **Technical Detail:** * **Mermaid:** Check for the presence of `graph LR` and matching brackets.
+    
+    - **Recall Table:** Ensure it contains the Markdown pipe `|` and at least two rows.
+        
+    - **Study Cards:** Validate the `[[ ]] ::` syntax using Regex.
+        
+
+---
+
+### **Definition of Done (DoD) Checklist**
+
+- [ ] `EvaluationService` successfully flags invalid XML according to the `.xsd`.
+    
+- [ ] Nodes automatically retry up to 3 times before failing.
+    
+- [ ] The "Correction Prompt" is dynamically generated based on the validation error.
+    
+- [ ] Unit tests in `tests/unit/domain/services/test_evaluation_service.py` confirm the retry logic.
+
+---
+
+## 📄 US 4: Artifact Generation (The Three-File Output)
+
+**User Story:** _As an Obsidian user, I want to receive three distinct files (Source, Refined, and Resources) to keep my knowledge base organized and highly searchable._
+
+- **Acceptance Criteria (AC):**
+    
+    - `source.xml`: Must contain the pure atomic structure (`STRUCT_XML`).
+        
+    - `refined.md`: Must combine `META_PROPS` (YAML) and `PROSE_WRITER`.
+        
+    - `resources.md`: Must consolidate `RECALL_TABLE`, `MERMAID_MAP`, and `STUDY_CARDS`.
+        
+    - File naming must strictly follow: `[Category]_[Concept]_Strategic`.
+        
+- **Definition of Done (DoD):** Complete pipeline execution producing the 3-file bundle in the `/output` folder without manual intervention.}
+## 📄 US 4: Artifact Generation (The Three-File Output)
+
+### **Task 4.1: Semantic Filename Engine**
+
+- **Goal:** Generate the standardized filename using the `FILE_NAMER` agent's output.
+    
+- **Action:** Implement a utility in `src/domain/utils/naming_conventions.py`.
+    
+- **Technical Detail:**
+    
+    - Sanitize the string to ensure it only contains `Alphanumeric` and `Underscores`.
+        
+    - Enforce the `[Category]_[Concept]_Strategic` pattern.
+        
+    - Ensure the length does not exceed 40 characters (as per your prompt's hard rule).
+        
+
+### **Task 4.2: Markdown Assembler (Refined & Resources)**
+
+- **Goal:** Combine outputs from different agents into valid Markdown files.
+    
+- **Action:** Update `src/domain/services/fixing_service.py` with an assembly method.
+    
+- **Technical Detail:**
+    
+    - **Refined:** Prepend the YAML from `META_PROPS` (surrounded by `---`) to the `PROSE_WRITER` output.
+        
+    - **Resources:** Concatenate `RECALL_TABLE`, then `MERMAID_MAP` (wrapped in ` ```mermaid `), and finally `STUDY_CARDS`.
+        
+    - Insert horizontal rules (`---`) between sections for readability in Obsidian.
+        
+
+### **Task 4.3: XML Source Persistence**
+
+- **Goal:** Save the raw `STRUCT_XML` as a standalone "Source of Truth" file.
+    
+- **Action:** Interface with `src/infrastructure/adapters/storage/atomic_storage.py`.
+    
+- **Technical Detail:**
+    
+    - Save the file as `source.xml` within the generated folder.
+        
+    - Ensure the XML header `<?xml version="1.0" encoding="UTF-8"?>` is present for system compatibility.
+        
+
+### **Task 4.4: Output Folder Provisioning**
+
+- **Goal:** Automatically create the directory structure for the 3-file bundle.
+    
+- **Action:** Enhance the `LocalFileSystemAdapter`.
+    
+- **Technical Detail:**
+    
+    - Check for existing folders to avoid overwriting or handle versioning.
+        
+    - Path structure: `output/{Generated_Filename}/`.
+        
+    - Move files from the "Draft" state to this final "Production" folder only after all validations pass.
+        
+
+---
+
+### **Definition of Done (DoD) Checklist**
+
+- [ ] Folder `output/[Category]_[Concept]_Strategic/` is created automatically.
+    
+- [ ] `source.xml` is valid XML and contains the `<atomic_structure>`.
+    
+- [ ] `refined.md` displays a correct YAML property block in Obsidian.
+    
+- [ ] `resources.md` correctly renders the Mermaid diagram and Flashcards.
+    
+- [ ] Integration test `tests/integration/domain/services/test_fixing_service_integration.py` confirms the full end-to-end creation of the bundle.
+        self._agent_map = {
+
+            "struct_xml": "atomicity_agent",
+
+            "logic_flow": "reordering_agent",
+
+            "meta_props": "tag_agent",
+
+            "file_namer": "naming_agent",
+
+            "prose_writer": "content_agent",
+
+            "recall_table": "matrix_agent",
+
+            "study_cards": "flashcards_agent",
+
+            "mermaid_map": "diagram_agent",
+
+            "workflow_sme": "case_study_agent",
+
+        }

@@ -1,0 +1,5 @@
+{Here are three punchy bullet points summarizing the documentation:
+
+• **Knowledge Extraction and Conversation**: The team is working on extracting knowledge from conversations, using tools like Langpgrah and PyCharm, and optimizing autoformat for better performance.
+• **Backend Architecture and Integration**: The team is setting up a backend architecture with LLM Endpoints (Claude 4.5), OpenAI, and Gemini mini, and integrating Okta for authentication and authorization.
+• **Data Persistence and Visualization**: The team is working on persisting conversation data in Postgres history, using checkpoint for copying, and creating visualizations with graphs that can be customized depending on the theme and data types.}

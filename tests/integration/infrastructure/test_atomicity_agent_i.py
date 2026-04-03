@@ -24,7 +24,7 @@ def orchestrator_setup(tmp_path):
     supervisor, registry = setup_orchestrator(llm, fs)
     return supervisor, registry, tmp_path
 
-@pytest.Mark.asyncio
+@pytest.mark.asyncio
 @pytest.mark.integration
 @pytest.mark.skipif(not is_ollama_running(), reason="Ollama offline")
 async def test_full_task_loop_atomicity(orchestrator_setup):

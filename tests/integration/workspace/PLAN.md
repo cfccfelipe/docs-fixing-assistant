@@ -1,0 +1,62 @@
+- [x] fixed_files/development/filename.md -> naming_agent -> rename_file
+- [x] fixed_files/development/filename.md -> classifier_agent -> classify_domain
+- [x] 2026-03-21 - Daily.md (Part 1) -> atomicity_agent -> xml_conversion
+- [x] 2026-03-21 - Daily.md (Part 1) -> summarizer_agent -> hierarchical_summary
+- [x] 2026-03-21 - Daily.md (Part 2) -> atomicity_agent -> xml_conversion
+- [x] 2026-03-21 - Daily.md (Part 2) -> summarizer_agent -> hierarchical_summary
+- [x] 2026-03-21 - Daily.md (Part 3) -> atomicity_agent -> xml_conversion
+- [x] 2026-03-21 - Daily.md (Part 3) -> summarizer_agent -> hierarchical_summary
+- [x] 2026-03-21 - Daily.md (Part 4) -> atomicity_agent -> xml_conversion
+- [x] 2026-03-21 - Daily.md (Part 4) -> summarizer_agent -> hierarchical_summary
+- [x] 2026-03-21 - Daily.md (Part 5) -> atomicity_agent -> xml_conversion
+- [x] 2026-03-21 - Daily.md (Part 5) -> summarizer_agent -> hierarchical_summary
+- [x] 2026-03-21 - Daily.md (Part 6) -> atomicity_agent -> xml_conversion
+- [x] 2026-03-21 - Daily.md (Part 6) -> summarizer_agent -> hierarchical_summary
+- [x] 2026-03-21 - Daily.md (Part 7) -> atomicity_agent -> xml_conversion
+- [x] 2026-03-21 - Daily.md (Part 7) -> summarizer_agent -> hierarchical_summary
+- [x] 2026-03-21 - Daily.md (Part 8) -> atomicity_agent -> xml_conversion
+- [x] 2026-03-21 - Daily.md (Part 8) -> summarizer_agent -> hierarchical_summary
+- [x] fixed_files/development/filename.md -> tag_agent -> generate_metadata
+- [x] fixed_files/research/us-2026-03-23-the-graph-intelligence-supervisor-node.md -> naming_agent -> rename_file
+- [x] fixed_files/research/us-2026-03-23-the-graph-intelligence-supervisor-node.md -> classifier_agent -> classify_domain
+- [x] 2026-03-23 - Daily.md (Part 1) -> atomicity_agent -> xml_conversion
+- [x] 2026-03-23 - Daily.md (Part 1) -> summarizer_agent -> hierarchical_summary
+- [x] 2026-03-23 - Daily.md (Part 2) -> atomicity_agent -> xml_conversion
+- [x] 2026-03-23 - Daily.md (Part 2) -> summarizer_agent -> hierarchical_summary
+- [x] 2026-03-23 - Daily.md (Part 3) -> atomicity_agent -> xml_conversion
+- [x] 2026-03-23 - Daily.md (Part 3) -> summarizer_agent -> hierarchical_summary
+- [x] 2026-03-23 - Daily.md (Part 4) -> atomicity_agent -> xml_conversion
+- [x] 2026-03-23 - Daily.md (Part 4) -> summarizer_agent -> hierarchical_summary
+- [x] fixed_files/research/us-2026-03-23-the-graph-intelligence-supervisor-node.md -> tag_agent -> generate_metadata
+- [x] fixed_files/development/daily_2026_02.md -> naming_agent -> rename_file
+- [x] fixed_files/development/daily_2026_02.md -> classifier_agent -> classify_domain
+- [x] fixed_files/development/daily_2026_02.md -> atomicity_agent -> xml_conversion
+- [x] fixed_files/development/daily_2026_02.md -> summarizer_agent -> hierarchical_summary
+- [x] fixed_files/development/daily_2026_02.md -> tag_agent -> generate_metadata
+- [x] fixed_files/development/filename.md -> naming_agent -> rename_file
+- [x] fixed_files/development/filename.md -> classifier_agent -> classify_domain
+- [x] 2026-04-02 - Daily.md (Part 1) -> atomicity_agent -> xml_conversion
+- [x] 2026-04-02 - Daily.md (Part 1) -> summarizer_agent -> hierarchical_summary
+- [x] 2026-04-02 - Daily.md (Part 2) -> atomicity_agent -> xml_conversion
+- [x] 2026-04-02 - Daily.md (Part 2) -> summarizer_agent -> hierarchical_summary
+- [x] fixed_files/development/filename.md -> tag_agent -> generate_metadata
+- [x] fixed_files/development/daily_2026_02.md -> naming_agent -> rename_file
+- [x] fixed_files/development/daily_2026_02.md -> classifier_agent -> classify_domain
+- [x] fixed_files/development/daily_2026_02.md -> atomicity_agent -> xml_conversion
+- [x] fixed_files/development/daily_2026_02.md -> summarizer_agent -> hierarchical_summary
+- [x] fixed_files/development/daily_2026_02.md -> tag_agent -> generate_metadata
+- [x] fixed_files/development/bold-bias-open-ended-language-generation-dataset.md -> naming_agent -> rename_file
+- [x] fixed_files/development/bold-bias-open-ended-language-generation-dataset.md -> classifier_agent -> classify_domain
+- [x] fixed_files/development/bold-bias-open-ended-language-generation-dataset.md -> atomicity_agent -> xml_conversion
+- [x] fixed_files/development/bold-bias-open-ended-language-generation-dataset.md -> summarizer_agent -> hierarchical_summary
+- [x] fixed_files/development/bold-bias-open-ended-language-generation-dataset.md -> tag_agent -> generate_metadata
+- [x] fixed_files/guides/filename.md -> naming_agent -> rename_file
+- [x] fixed_files/guides/filename.md -> classifier_agent -> classify_domain
+- [x] fixed_files/guides/filename.md -> atomicity_agent -> xml_conversion
+- [x] fixed_files/guides/filename.md -> summarizer_agent -> hierarchical_summary
+- [x] fixed_files/guides/filename.md -> tag_agent -> generate_metadata
+- [x] fixed_files/research/2026-02-24-daily-notes.md -> naming_agent -> rename_file
+- [x] fixed_files/research/2026-02-24-daily-notes.md -> classifier_agent -> classify_domain
+- [x] fixed_files/research/2026-02-24-daily-notes.md -> atomicity_agent -> xml_conversion
+- [x] fixed_files/research/2026-02-24-daily-notes.md -> summarizer_agent -> hierarchical_summary
+- [x] fixed_files/research/2026-02-24-daily-notes.md -> tag_agent -> generate_metadata

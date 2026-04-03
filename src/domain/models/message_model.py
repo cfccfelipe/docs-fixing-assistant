@@ -3,6 +3,7 @@ from typing import Any
 from uuid import UUID
 
 from domain.models.enums import MessageRole
+from domain.models.tool_model import ToolCall
 
 
 @dataclass(frozen=True)
@@ -14,6 +15,8 @@ class MessageDefinition:
     id: UUID
     role: MessageRole
     content_history: str
+    tool_calls: list[ToolCall] | None = None
+    tool_call_id: str | None = None
     tool_history_ids: list[str] | None = None
 
     def to_dict(self) -> dict[str, Any]:

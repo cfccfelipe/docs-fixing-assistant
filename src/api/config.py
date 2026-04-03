@@ -4,8 +4,7 @@ Uses Composition to group infrastructure-specific configs.
 """
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
-
-from infrastructure.adapters.config.ollama import OllamaConfig
+from domain.models.llm_provider_model import OllamaConfig
 
 
 class Settings(BaseSettings):
@@ -23,7 +22,12 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "Docs Fixing Assistant"
     VERSION: str = "1.0.0"
 
-    ollama: OllamaConfig = OllamaConfig()
+    # Security
+    API_KEY: str = "default_secret_key_change_me"
+
+    # Infrastructure Config
+    # We provide a default model_id, but it can be overridden by env vars
+    ollama: OllamaConfig = OllamaConfig(model_id="llama3.1:latest")
 
     model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", extra="ignore"

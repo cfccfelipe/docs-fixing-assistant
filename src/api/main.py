@@ -10,11 +10,8 @@ from starlette.middleware.cors import CORSMiddleware
 
 from api.config import settings
 from api.dependencies import (
-    fixing_module,
-    full_pipeline_module,
     health_module,
-    reordering_module,
-    strategic_module,
+    orchestration_module,
 )
 from api.handlers.error_handler import register_error_handlers
 from domain.utils.logging import setup_logging
@@ -48,12 +45,11 @@ def create_app() -> FastAPI:
     app.include_router(
         router=health_module.router, prefix=API_V1_PREFIX, tags=["System"]
     )
+    
+    # Unified Orchestrator Entry Point
     app.include_router(
-        router=fixing_module.router, prefix=API_V1_PREFIX, tags=["Document Fixing"]
+        router=orchestration_module.router, prefix=API_V1_PREFIX
     )
-    app.include_router(router=reordering_module.router, prefix=API_V1_PREFIX)
-    app.include_router(strategic_module.router, prefix=API_V1_PREFIX)
-    app.include_router(full_pipeline_module.router, prefix=API_V1_PREFIX)
 
     @app.get("/", include_in_schema=False)
     async def root_redirect():

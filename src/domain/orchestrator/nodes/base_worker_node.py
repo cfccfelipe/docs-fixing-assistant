@@ -3,7 +3,12 @@ import uuid
 from typing import Any
 
 from domain.models.enums import MessageRole, StopReason
-from domain.models.llm_provider_model import LLMInferenceConfig, LLMRequest, LLMResponse
+from domain.models.llm_provider_model import (
+    LLMInferenceConfig,
+    LLMRequest,
+    LLMResponse,
+    ToolCall,
+)
 from domain.models.message_model import MessageDefinition
 from domain.models.state_model import AgentState, StateUpdate
 from domain.orchestrator.nodes.base_node import BaseNode
@@ -27,6 +32,11 @@ class BaseWorkerNode(BaseNode):
         if "stop_reason" in delta:
             return StateUpdate(metadata=self._create_metadata(state), **delta)
 
+        # 🎯 CONTEXT ISOLATION: Fresh message list for EVERY agent call.
+        # We only pass the specific task and the target file name.
+        # We EXCLUDE state.content (the entire PLAN.md) to keep context small for 8B models.
+        task_info = f"CURRENT TASK: {state.next_task}\nTARGET FILE: {state.current_file}"
+        
         messages = [
             MessageDefinition(
                 id=uuid.uuid4(),
@@ -36,13 +46,13 @@ class BaseWorkerNode(BaseNode):
             MessageDefinition(
                 id=uuid.uuid4(),
                 role=MessageRole.USER,
-                content_history=f"Task: {state.next_task}\nContext: {state.content}",
+                content_history=f"Proceed with the following instructions:\n{task_info}",
             ),
         ]
 
         task_results = []
         node_iterations = 0
-        max_node_iters = 5 # Prevent infinite internal loops
+        max_node_iters = 5
 
         while node_iterations < max_node_iters:
             node_iterations += 1
@@ -57,46 +67,45 @@ class BaseWorkerNode(BaseNode):
 
             response: LLMResponse = await self._execute_inference(request)
             
-            # Si no hay tool calls, terminamos el bucle interno
-            if not response.tool_calls or not self.tool_registry:
-                return StateUpdate(
-                    task_result="\n".join(task_results) if task_results else response.content,
-                    next_agent="supervisor",
-                    stop_reason=StopReason.CALL,
-                    metadata=self._create_metadata(state, response),
-                    iteration=state.iteration + 1,
-                )
-
-            # Ejecutar herramientas
-            results, errors = await self._execute_tools(response.tool_calls)
-            task_results.extend(results)
-            
-            # Actualizar historial para la siguiente vuelta
-            # 1. Agregar la respuesta del asistente (con las tool_calls)
-            messages.append(MessageDefinition(
-                id=uuid.uuid4(),
-                role=MessageRole.ASSISTANT,
-                content_history=response.content,
-                tool_calls=response.tool_calls
-            ))
-            # 2. Agregar los resultados de las herramientas
-            for i, res in enumerate(results):
+            if response.tool_calls and self.tool_registry:
+                results, errors = await self._execute_tools(response.tool_calls)
+                
                 messages.append(MessageDefinition(
                     id=uuid.uuid4(),
-                    role=MessageRole.TOOL,
-                    content_history=res,
-                    # Relacionar con el ID de la llamada si es posible
+                    role=MessageRole.ASSISTANT,
+                    content_history=response.content or "Executing tool...",
+                    tool_calls=response.tool_calls
                 ))
-
-            if errors:
-                return StateUpdate(
-                    task_result="\n".join(task_results),
-                    error_message="; ".join(errors),
-                    next_agent="supervisor",
-                    stop_reason=StopReason.ERROR,
-                    metadata=self._create_metadata(state, response),
-                    iteration=state.iteration + 1,
-                )
+                
+                for call_id, res in results:
+                    logger.info(f"🛠 Tool execution complete: {call_id} -> {res[:100]}...")
+                    task_results.append(res)
+                    messages.append(MessageDefinition(
+                        id=uuid.uuid4(),
+                        role=MessageRole.TOOL,
+                        content_history=res,
+                        tool_call_id=call_id
+                    ))
+                
+                if errors:
+                    return StateUpdate(
+                        task_result="\n".join(task_results),
+                        error_message="; ".join(errors),
+                        next_agent="supervisor",
+                        stop_reason=StopReason.ERROR,
+                        metadata=self._create_metadata(state, response),
+                        iteration=state.iteration + 1,
+                    )
+                continue
+            
+            # Successful completion of the agent's internal loop
+            return StateUpdate(
+                task_result="\n".join(task_results) if task_results else response.content,
+                next_agent="supervisor",
+                stop_reason=StopReason.CALL,
+                metadata=self._create_metadata(state, response),
+                iteration=state.iteration + 1,
+            )
 
         return StateUpdate(
             task_result="\n".join(task_results),
@@ -107,16 +116,19 @@ class BaseWorkerNode(BaseNode):
             iteration=state.iteration + 1,
         )
 
-    async def _execute_tools(self, tool_calls: list[ToolCall]) -> tuple[list[str], list[str]]:
+    async def _execute_tools(self, tool_calls: list[ToolCall]) -> tuple[list[tuple[str, str]], list[str]]:
         results = []
         errors = []
         if not self.tool_registry:
+            logger.error("🚨 ToolRegistry is None!")
             return [], ["ToolRegistry missing"]
 
         for call in tool_calls:
             try:
+                logger.info(f"🛠 Executing tool: {call.name} for agent {self.config.agent_id}")
                 result = self.tool_registry.execute(call.name, **call.arguments)
-                results.append(f"Tool {call.name} output: {result}")
+                msg = f"Tool {call.name} success: {result}"
+                results.append((call.id, msg))
             except Exception as e:
                 error_msg = f"Error in {call.name}: {str(e)}"
                 logger.error(f"🚨 {error_msg}")

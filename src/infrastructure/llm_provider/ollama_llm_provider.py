@@ -83,6 +83,25 @@ class OllamaAdapter(LLMProviderPort):
         content = message.get("content", "")
         raw_calls = message.get("tool_calls", [])
 
+        # Fallback for Ollama tool call hallucination in content
+        if not raw_calls and content:
+            content_str = content.strip()
+            if content_str.startswith("{") and content_str.endswith("}"):
+                import json
+                try:
+                    parsed_content = json.loads(content_str)
+                    if "name" in parsed_content and ("parameters" in parsed_content or "arguments" in parsed_content):
+                        # Construct a mock tool call structure
+                        raw_calls = [{
+                            "function": {
+                                "name": parsed_content["name"],
+                                "arguments": parsed_content.get("parameters", parsed_content.get("arguments", {}))
+                            }
+                        }]
+                        content = "" # Clear content since it was actually a tool call
+                except json.JSONDecodeError:
+                    pass
+
         in_t = data.get("prompt_eval_count") or 0
         out_t = data.get("eval_count") or 0
         
@@ -122,7 +141,25 @@ class OllamaAdapter(LLMProviderPort):
             return 0.0
 
     def _map_messages(self, chat_messages: list[MessageDefinition]) -> list[dict[str, Any]]:
-        return [{"role": m.role.value, "content": m.content_history} for m in chat_messages]
+        mapped = []
+        for m in chat_messages:
+            msg_dict = {"role": m.role.value, "content": m.content_history}
+            if m.tool_calls:
+                msg_dict["tool_calls"] = [
+                    {
+                        "id": t.id,
+                        "type": "function",
+                        "function": {
+                            "name": t.name,
+                            "arguments": t.arguments,
+                        }
+                    }
+                    for t in m.tool_calls
+                ]
+            if m.tool_call_id:
+                msg_dict["tool_call_id"] = m.tool_call_id
+            mapped.append(msg_dict)
+        return mapped
 
     def _map_tools(self, tools: Any) -> list[dict[str, Any]] | None:
         if not tools:

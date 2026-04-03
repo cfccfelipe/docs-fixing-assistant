@@ -2,7 +2,7 @@ import logging
 import re
 from typing import Any
 
-from domain.ports.tool import ITool
+from domain.ports.tool_port import ITool
 
 logger = logging.getLogger(__name__)
 
